@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify, send_file
 from pydantic import BaseModel, Field, validator
-from typing import Literal
+from typing import Literal, Optional
 import re
 from io import BytesIO
 from reportlab.pdfgen import canvas
@@ -15,6 +15,9 @@ class CompanyFormation(BaseModel):
     state_of_formation: str = Field(..., description="US state or territory")
     company_type: Literal["corporation", "LLC"] = Field(..., description="Type of company")
     incorporator_name: str = Field(..., description="Name of incorporator")
+    # NY-specific fields
+    county: Optional[str] = Field(None, description="County (required for NY)")
+    address: Optional[str] = Field(None, description="Address (required for NY)")
 
     @validator('company_name')
     def validate_company_name(cls, v):
@@ -25,11 +28,25 @@ class CompanyFormation(BaseModel):
     @validator('state_of_formation')
     def validate_state(cls, v):
         states = {
-            'DE', 'CA'
+            'DE', 'CA', 'NY'
         }
         if v.upper() not in states:
             raise ValueError('Invalid US state or territory')
         return v.upper()
+    
+    @validator('county')
+    def validate_county(cls, v, values):
+        if 'state_of_formation' in values and values['state_of_formation'] == 'NY':
+            if not v:
+                raise ValueError('County is required for New York formations')
+        return v.upper() if v else v
+    
+    @validator('address')
+    def validate_address(cls, v, values):
+        if 'state_of_formation' in values and values['state_of_formation'] == 'NY':
+            if not v:
+                raise ValueError('Address is required for New York formations')
+        return v
 
 def generate_delaware_articles(company_data: CompanyFormation) -> BytesIO:
     buffer = BytesIO()
@@ -173,6 +190,129 @@ def generate_california_llc_certificate(company_data: CompanyFormation) -> Bytes
     buffer.seek(0)
     return buffer
 
+def generate_newyork_articles(company_data: CompanyFormation) -> BytesIO:
+    buffer = BytesIO()
+    c = canvas.Canvas(buffer, pagesize=letter)
+    
+    # Set up the document
+    c.setFont("Helvetica-Bold", 14)
+    c.drawCentredString(300, 750, "CERTIFICATE OF INCORPORATION")
+    c.drawCentredString(300, 730, "OF")
+    c.drawCentredString(300, 710, company_data.company_name)
+    c.setFont("Helvetica", 11)
+    c.drawCentredString(300, 690, "Under Section 402 of the Business Corporation Law")
+    
+    # FIRST - Company Name
+    c.setFont("Helvetica-Bold", 11)
+    c.drawString(50, 650, "FIRST:")
+    c.setFont("Helvetica", 11)
+    c.drawString(100, 650, "The name of this corporation is:")
+    c.drawString(50, 630, company_data.company_name)
+    
+    # SECOND - Purpose
+    c.setFont("Helvetica-Bold", 11)
+    c.drawString(50, 590, "SECOND:")
+    c.setFont("Helvetica", 11)
+    c.drawString(100, 590, "The purpose of the corporation is to engage in any lawful act or activity for which")
+    c.drawString(50, 570, "a corporation may be organized under the Business Corporation Law. The corporation is not")
+    c.drawString(50, 550, "formed to engage in any act or activity requiring the consent or approval of any state official,")
+    c.drawString(50, 530, "department, board, agency or other body without such consent or approval first being obtained.")
+    
+    # THIRD - County
+    c.setFont("Helvetica-Bold", 11)
+    c.drawString(50, 490, "THIRD:")
+    c.setFont("Helvetica", 11)
+    c.drawString(100, 490, "The county, within this state, in which the office of the corporation is to be located")
+    c.drawString(50, 470, f"is: {company_data.county} COUNTY.")
+    
+    # FOURTH - Shares
+    c.setFont("Helvetica-Bold", 11)
+    c.drawString(50, 430, "FOURTH:")
+    c.setFont("Helvetica", 11)
+    c.drawString(100, 430, "The corporation shall have authority to issue one class of shares consisting of")
+    c.drawString(50, 410, "1,000 common shares with $0.01 par value per share.")
+    
+    # FIFTH - Secretary of State as Agent
+    c.setFont("Helvetica-Bold", 11)
+    c.drawString(50, 370, "FIFTH:")
+    c.setFont("Helvetica", 11)
+    c.drawString(100, 370, "The Secretary of State is designated as agent of the corporation upon whom process")
+    c.drawString(50, 350, "against the corporation may be served.")
+    c.drawString(50, 330, "The post office address to which the Secretary of State shall mail a copy of any process")
+    c.drawString(50, 310, "against the corporation served upon the Secretary of State by personal delivery is:")
+    c.drawString(50, 290, company_data.address)
+    
+    # Incorporator
+    c.drawString(50, 220, "Incorporator:")
+    c.drawString(50, 200, f"/s/ {company_data.incorporator_name}")
+    c.drawString(50, 180, company_data.address)
+    
+    # Filer's Name and Address
+    c.drawString(50, 140, "Filer's Name and Address:")
+    c.drawString(50, 120, f"/s/ {company_data.incorporator_name}")
+    c.drawString(50, 100, company_data.address)
+    
+    c.save()
+    buffer.seek(0)
+    return buffer
+
+def generate_newyork_llc_certificate(company_data: CompanyFormation) -> BytesIO:
+    buffer = BytesIO()
+    c = canvas.Canvas(buffer, pagesize=letter)
+    
+    # Set up the document
+    c.setFont("Helvetica-Bold", 14)
+    c.drawCentredString(300, 750, "ARTICLES OF ORGANIZATION")
+    c.drawCentredString(300, 730, "OF")
+    c.drawCentredString(300, 710, company_data.company_name)
+    c.setFont("Helvetica", 11)
+    c.drawCentredString(300, 690, "Under Section 203 of the Limited Liability Company Law")
+    
+    # FIRST - Company Name
+    c.setFont("Helvetica-Bold", 11)
+    c.drawString(50, 650, "FIRST:")
+    c.setFont("Helvetica", 11)
+    c.drawString(100, 650, "The name of the limited liability company is:")
+    c.drawString(50, 630, company_data.company_name)
+    
+    # SECOND - Purpose
+    c.setFont("Helvetica-Bold", 11)
+    c.drawString(50, 590, "SECOND:")
+    c.setFont("Helvetica", 11)
+    c.drawString(100, 590, "The purpose of the limited liability company is to engage in any lawful act or activity")
+    c.drawString(50, 570, "for which limited liability companies may be organized under the Limited Liability Company Law.")
+    
+    # THIRD - County
+    c.setFont("Helvetica-Bold", 11)
+    c.drawString(50, 530, "THIRD:")
+    c.setFont("Helvetica", 11)
+    c.drawString(100, 530, "The county, within this state, in which the office of the limited liability company is to be")
+    c.drawString(50, 510, f"located is: {company_data.county} COUNTY.")
+    
+    # FOURTH - Secretary of State as Agent
+    c.setFont("Helvetica-Bold", 11)
+    c.drawString(50, 470, "FOURTH:")
+    c.setFont("Helvetica", 11)
+    c.drawString(100, 470, "The Secretary of State is designated as agent of the limited liability company upon whom")
+    c.drawString(50, 450, "process against it may be served.")
+    c.drawString(50, 430, "The post office address to which the Secretary of State shall mail a copy of any process")
+    c.drawString(50, 410, "against the limited liability company served upon the Secretary of State is:")
+    c.drawString(50, 390, company_data.address)
+    
+    # Organizer
+    c.drawString(50, 280, "Organizer:")
+    c.drawString(50, 260, f"/s/ {company_data.incorporator_name}")
+    c.drawString(50, 240, company_data.address)
+    
+    # Filer's Name and Address
+    c.drawString(50, 180, "Filer's Name and Address:")
+    c.drawString(50, 160, f"/s/ {company_data.incorporator_name}")
+    c.drawString(50, 140, company_data.address)
+    
+    c.save()
+    buffer.seek(0)
+    return buffer
+
 @app.route('/form-company', methods=['POST'])
 def form_company():
     try:
@@ -184,7 +324,9 @@ def form_company():
                 "company_name": request.form.get("company_name"),
                 "state_of_formation": request.form.get("state_of_formation"),
                 "company_type": request.form.get("company_type"),
-                "incorporator_name": request.form.get("incorporator_name")
+                "incorporator_name": request.form.get("incorporator_name"),
+                "county": request.form.get("county"),
+                "address": request.form.get("address")
             }
         
         company_data = CompanyFormation(**data)
@@ -203,9 +345,16 @@ def form_company():
                 pdf_buffer = generate_california_llc_certificate(company_data)
             else:
                 return jsonify({"error": "Unsupported company type"}), 400
+        elif company_data.state_of_formation == 'NY':
+            if company_data.company_type == 'corporation':
+                pdf_buffer = generate_newyork_articles(company_data)
+            elif company_data.company_type == 'LLC':
+                pdf_buffer = generate_newyork_llc_certificate(company_data)
+            else:
+                return jsonify({"error": "Unsupported company type"}), 400
         else:
             return jsonify({
-                "error": "Only Delaware and California entities are supported at this time"
+                "error": "Only Delaware, California, and New York entities are supported at this time"
             }), 400
     
         return send_file(
@@ -243,6 +392,22 @@ def form_company_schema():
             "state_of_formation": "CA",
             "company_type": "LLC",
             "incorporator_name": "Emily Chen"
+        },
+        {
+            "company_name": "Empire State Corp",
+            "state_of_formation": "NY",
+            "company_type": "corporation",
+            "incorporator_name": "Testy McTestface",
+            "county": "Albany",
+            "address": "418 BROADWAY STE Y, ALBANY, ALBANY COUNTY, NY 12207"
+        },
+        {
+            "company_name": "New York Ventures, LLC",
+            "state_of_formation": "NY",
+            "company_type": "LLC",
+            "incorporator_name": "Sarah Johnson",
+            "county": "New York",
+            "address": "123 MAIN ST, NEW YORK, NEW YORK COUNTY, NY 10001"
         }
     ]
     return jsonify(examples)
@@ -250,7 +415,7 @@ def form_company_schema():
 @app.route('/', methods=['GET'])
 def company_form():
     states = [
-        'DE', 'CA'
+        'DE', 'CA', 'NY'
     ]
     
     return f'''
@@ -262,9 +427,10 @@ def company_form():
             body {{ font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; }}
             form {{ display: grid; gap: 15px; }}
             label {{ font-weight: bold; }}
-            input, select {{ padding: 8px; font-size: 16px; }}
+            input, select, textarea {{ padding: 8px; font-size: 16px; }}
             button {{ background: #007bff; color: white; border: none; padding: 10px 20px; cursor: pointer; }}
             button:hover {{ background: #0056b3; }}
+            .ny-only {{ display: none; }}
         </style>
     </head>
     <body>
@@ -289,8 +455,35 @@ def company_form():
             <label for="incorporator_name">Incorporator Name:</label>
             <input type="text" id="incorporator_name" name="incorporator_name" required>
             
+            <div id="ny_fields" class="ny-only">
+                <label for="county">County (NY only):</label>
+                <input type="text" id="county" name="county">
+                
+                <label for="address">Address (NY only):</label>
+                <textarea id="address" name="address" rows="2"></textarea>
+            </div>
+            
             <button type="submit">Submit</button>
         </form>
+        
+        <script>
+            const stateSelect = document.getElementById('state_of_formation');
+            const nyFields = document.getElementById('ny_fields');
+            const countyInput = document.getElementById('county');
+            const addressInput = document.getElementById('address');
+            
+            stateSelect.addEventListener('change', function() {{
+                if (this.value === 'NY') {{
+                    nyFields.style.display = 'grid';
+                    countyInput.required = true;
+                    addressInput.required = true;
+                }} else {{
+                    nyFields.style.display = 'none';
+                    countyInput.required = false;
+                    addressInput.required = false;
+                }}
+            }});
+        </script>
     </body>
     </html>
     '''

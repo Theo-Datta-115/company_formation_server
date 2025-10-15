@@ -1,18 +1,12 @@
 import pytest
-from app import CompanyFormation, generate_delaware_articles, generate_california_articles, generate_california_llc_certificate
+from app import CompanyFormation, generate_delaware_articles, generate_california_articles, generate_california_llc_certificate, generate_newyork_articles, generate_newyork_llc_certificate
 from pydantic import ValidationError
-from PyPDF2 import PdfReader
 import io
 
 # Test data
 VALID_STATES = [
-    'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',
-    'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD',
-    'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ',
-    'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC',
-    'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY',
-    'DC', 'PR', 'GU', 'VI', 'AS', 'MP'
-]
+    'DE', 'CA', 'NY'
+] 
 
 def test_state_validation():
     # Test all valid states
@@ -102,3 +96,71 @@ def test_california_llc_pdf():
     assert "ARTICLE I: The name of the limited liability company is:" in text
     assert "ARTICLE II: The purpose of the limited liability company" in text
     assert "ARTICLE III: The name and address in California" in text
+
+def test_newyork_corporation_pdf():
+    test_data = {
+        "company_name": "Test Company",
+        "state_of_formation": "NY",
+        "company_type": "corporation",
+        "incorporator_name": "Testy McTestface",
+        "county": "Albany",
+        "address": "418 BROADWAY STE Y, ALBANY, ALBANY COUNTY, NY 12207"
+    }
+    
+    pdf_buffer = generate_newyork_articles(CompanyFormation(**test_data))
+    pdf_buffer.seek(0)
+    
+    reader = PdfReader(pdf_buffer)
+    text = "\n".join(page.extract_text() for page in reader.pages)
+    
+    assert "Test Company" in text
+    assert "CERTIFICATE OF INCORPORATION" in text
+    assert "Business Corporation Law" in text
+    assert "ALBANY COUNTY" in text
+    assert "418 BROADWAY STE Y" in text
+    assert "Testy McTestface" in text
+
+def test_newyork_llc_pdf():
+    test_data = {
+        "company_name": "New York Test LLC",
+        "state_of_formation": "NY",
+        "company_type": "LLC",
+        "incorporator_name": "Testy McTestface",
+        "county": "New York",
+        "address": "123 MAIN ST, NEW YORK, NEW YORK COUNTY, NY 10001"
+    }
+    
+    pdf_buffer = generate_newyork_llc_certificate(CompanyFormation(**test_data))
+    pdf_buffer.seek(0)
+    
+    reader = PdfReader(pdf_buffer)
+    text = "\n".join(page.extract_text() for page in reader.pages)
+    
+    assert "New York Test LLC" in text
+    assert "ARTICLES OF ORGANIZATION" in text
+    assert "Limited Liability Company Law" in text
+    assert "NEW YORK COUNTY" in text
+    assert "123 MAIN ST" in text
+    assert "Testy McTestface" in text
+
+def test_ny_requires_county_and_address():
+    # Test that NY formations require county
+    with pytest.raises(ValidationError):
+        data = {
+            "company_name": "Test Company",
+            "state_of_formation": "NY",
+            "company_type": "corporation",
+            "incorporator_name": "Test User"
+        }
+        CompanyFormation(**data)
+    
+    # Test that NY formations require address
+    with pytest.raises(ValidationError):
+        data = {
+            "company_name": "Test Company",
+            "state_of_formation": "NY",
+            "company_type": "corporation",
+            "incorporator_name": "Test User",
+            "county": "Albany"
+        }
+        CompanyFormation(**data)
