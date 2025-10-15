@@ -194,63 +194,49 @@ def generate_newyork_articles(company_data: CompanyFormation) -> BytesIO:
     buffer = BytesIO()
     c = canvas.Canvas(buffer, pagesize=letter)
     
-    # Set up the document
+    # Set up the document - only title is bold
     c.setFont("Helvetica-Bold", 14)
     c.drawCentredString(300, 750, "CERTIFICATE OF INCORPORATION")
+    c.setFont("Helvetica", 14)
     c.drawCentredString(300, 730, "OF")
     c.drawCentredString(300, 710, company_data.company_name)
     c.setFont("Helvetica", 11)
     c.drawCentredString(300, 690, "Under Section 402 of the Business Corporation Law")
     
     # FIRST - Company Name
-    c.setFont("Helvetica-Bold", 11)
-    c.drawString(50, 650, "FIRST:")
-    c.setFont("Helvetica", 11)
-    c.drawString(100, 650, "The name of this corporation is:")
-    c.drawString(50, 630, company_data.company_name)
+    c.drawString(50, 650, "FIRST: The name of this corporation is:")
+    c.drawString(70, 630, company_data.company_name)
     
     # SECOND - Purpose
-    c.setFont("Helvetica-Bold", 11)
-    c.drawString(50, 590, "SECOND:")
-    c.setFont("Helvetica", 11)
-    c.drawString(100, 590, "The purpose of the corporation is to engage in any lawful act or activity for which")
+    c.drawString(50, 590, "SECOND: The purpose of the corporation is to engage in any lawful act or activity for which")
     c.drawString(50, 570, "a corporation may be organized under the Business Corporation Law. The corporation is not")
     c.drawString(50, 550, "formed to engage in any act or activity requiring the consent or approval of any state official,")
     c.drawString(50, 530, "department, board, agency or other body without such consent or approval first being obtained.")
     
     # THIRD - County
-    c.setFont("Helvetica-Bold", 11)
-    c.drawString(50, 490, "THIRD:")
-    c.setFont("Helvetica", 11)
-    c.drawString(100, 490, "The county, within this state, in which the office of the corporation is to be located")
-    c.drawString(50, 470, f"is: {company_data.county} COUNTY.")
+    c.drawString(50, 490, "THIRD: The county, within this state, in which the office of the corporation is to be located")
+    c.drawString(50, 470, f"is: {company_data.county.upper()} COUNTY.")
     
     # FOURTH - Shares
-    c.setFont("Helvetica-Bold", 11)
-    c.drawString(50, 430, "FOURTH:")
-    c.setFont("Helvetica", 11)
-    c.drawString(100, 430, "The corporation shall have authority to issue one class of shares consisting of")
+    c.drawString(50, 430, "FOURTH: The corporation shall have authority to issue one class of shares consisting of")
     c.drawString(50, 410, "1,000 common shares with $0.01 par value per share.")
     
     # FIFTH - Secretary of State as Agent
-    c.setFont("Helvetica-Bold", 11)
-    c.drawString(50, 370, "FIFTH:")
-    c.setFont("Helvetica", 11)
-    c.drawString(100, 370, "The Secretary of State is designated as agent of the corporation upon whom process")
+    c.drawString(50, 370, "FIFTH: The Secretary of State is designated as agent of the corporation upon whom process")
     c.drawString(50, 350, "against the corporation may be served.")
     c.drawString(50, 330, "The post office address to which the Secretary of State shall mail a copy of any process")
     c.drawString(50, 310, "against the corporation served upon the Secretary of State by personal delivery is:")
-    c.drawString(50, 290, company_data.address)
+    c.drawString(50, 290, company_data.address.upper())
     
     # Incorporator
     c.drawString(50, 220, "Incorporator:")
-    c.drawString(50, 200, f"/s/ {company_data.incorporator_name}")
-    c.drawString(50, 180, company_data.address)
+    c.drawString(70, 200, f"/s/ {company_data.incorporator_name}")
+    c.drawString(70, 180, company_data.address.upper())
     
     # Filer's Name and Address
     c.drawString(50, 140, "Filer's Name and Address:")
-    c.drawString(50, 120, f"/s/ {company_data.incorporator_name}")
-    c.drawString(50, 100, company_data.address)
+    c.drawString(70, 120, f"/s/ {company_data.incorporator_name}")
+    c.drawString(70, 100, company_data.address.upper())
     
     c.save()
     buffer.seek(0)
@@ -260,54 +246,39 @@ def generate_newyork_llc_certificate(company_data: CompanyFormation) -> BytesIO:
     buffer = BytesIO()
     c = canvas.Canvas(buffer, pagesize=letter)
     
-    # Set up the document
+    # Set up the document - only title is bold
     c.setFont("Helvetica-Bold", 14)
     c.drawCentredString(300, 750, "ARTICLES OF ORGANIZATION")
+    c.setFont("Helvetica", 14)
     c.drawCentredString(300, 730, "OF")
     c.drawCentredString(300, 710, company_data.company_name)
     c.setFont("Helvetica", 11)
     c.drawCentredString(300, 690, "Under Section 203 of the Limited Liability Company Law")
     
     # FIRST - Company Name
-    c.setFont("Helvetica-Bold", 11)
-    c.drawString(50, 650, "FIRST:")
-    c.setFont("Helvetica", 11)
-    c.drawString(100, 650, "The name of the limited liability company is:")
-    c.drawString(50, 630, company_data.company_name)
+    c.drawString(50, 650, "FIRST: The name of the limited liability company is:")
+    c.drawString(70, 630, company_data.company_name)
     
-    # SECOND - Purpose
-    c.setFont("Helvetica-Bold", 11)
-    c.drawString(50, 590, "SECOND:")
-    c.setFont("Helvetica", 11)
-    c.drawString(100, 590, "The purpose of the limited liability company is to engage in any lawful act or activity")
-    c.drawString(50, 570, "for which limited liability companies may be organized under the Limited Liability Company Law.")
+    # SECOND - County
+    c.drawString(50, 590, "SECOND: The county, within this state, in which the office of the limited liability company is to be")
+    c.drawString(50, 570, f"located is: {company_data.county.upper()} COUNTY.")
     
-    # THIRD - County
-    c.setFont("Helvetica-Bold", 11)
-    c.drawString(50, 530, "THIRD:")
-    c.setFont("Helvetica", 11)
-    c.drawString(100, 530, "The county, within this state, in which the office of the limited liability company is to be")
-    c.drawString(50, 510, f"located is: {company_data.county} COUNTY.")
-    
-    # FOURTH - Secretary of State as Agent
-    c.setFont("Helvetica-Bold", 11)
-    c.drawString(50, 470, "FOURTH:")
-    c.setFont("Helvetica", 11)
-    c.drawString(100, 470, "The Secretary of State is designated as agent of the limited liability company upon whom")
-    c.drawString(50, 450, "process against it may be served.")
-    c.drawString(50, 430, "The post office address to which the Secretary of State shall mail a copy of any process")
-    c.drawString(50, 410, "against the limited liability company served upon the Secretary of State is:")
-    c.drawString(50, 390, company_data.address)
+    # THIRD - Secretary of State as Agent
+    c.drawString(50, 530, "THIRD: The Secretary of State is designated as agent of the limited liability company upon whom")
+    c.drawString(50, 510, "process against the limited liability company be served.")
+    c.drawString(50, 490, "The post office address to which the Secretary of State shall mail a copy of any process against")
+    c.drawString(50, 470, "the limited liability company upon the Secretary of State by personal delivery is:")
+    c.drawString(50, 450, company_data.address.upper())
     
     # Organizer
-    c.drawString(50, 280, "Organizer:")
-    c.drawString(50, 260, f"/s/ {company_data.incorporator_name}")
-    c.drawString(50, 240, company_data.address)
+    c.drawString(50, 340, "Organizer:")
+    c.drawString(70, 320, f"/s/ {company_data.incorporator_name}")
+    c.drawString(70, 300, company_data.address.upper())
     
     # Filer's Name and Address
-    c.drawString(50, 180, "Filer's Name and Address:")
-    c.drawString(50, 160, f"/s/ {company_data.incorporator_name}")
-    c.drawString(50, 140, company_data.address)
+    c.drawString(50, 240, "Filer's Name and Address:")
+    c.drawString(70, 220, f"/s/ {company_data.incorporator_name}")
+    c.drawString(70, 200, company_data.address.upper())
     
     c.save()
     buffer.seek(0)
